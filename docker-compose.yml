@@ -1,0 +1,19 @@
+version: '3.4'
+
+services:
+  clipconverter:
+    image: ${DOCKER_REGISTRY-}clipconverter
+    environment:
+        DOTNET_ENVIRONMENT: Development
+    build:
+      context: .
+      dockerfile: ClipConverter/Dockerfile
+    volumes:
+        - //c/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data:/data/converted
+  ##azurite:
+  ##  image: "mcr.microsoft.com/azure-storage/azurite"
+  ##  container_name: azurite
+  ##  ports:
+  ##    - "10000:10000" 
+  ##    - "10001:10001" 
+  ##    - "10002:10002"

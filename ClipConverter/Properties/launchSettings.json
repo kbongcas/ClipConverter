@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ClipConverter": {
+      "commandName": "Project"
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}
