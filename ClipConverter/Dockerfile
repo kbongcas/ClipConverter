@@ -12,6 +12,8 @@ RUN dotnet restore "ClipConverter/ClipConverter.csproj"
 COPY . .
 WORKDIR "/src/ClipConverter"
 RUN dotnet build "ClipConverter.csproj" -c Release -o /app/build
+RUN mkdir -p /data/converted
+RUN mkdir -p /data/clips
 
 
 FROM build AS publish

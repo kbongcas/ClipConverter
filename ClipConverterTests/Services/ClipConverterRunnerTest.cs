@@ -19,6 +19,8 @@ public class ClipConverterRunnerTest
     private ClipConverterRunner _clipConverterRunner;
     public string ffmpegPath = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe";
     public string outputDirPath = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/";
+    public string clipsOutputDir = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/clips/";
+    public string convertedOutputDir = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/converted/";
     public string queueName = "clips";
     public string clipsContainerName = "clips";
     public string convertedClipsContainerName = "convertedclips";
@@ -31,7 +33,8 @@ public class ClipConverterRunnerTest
         var inMemConfig = new Dictionary<string, string> {
 
             {"FfmpegExecPath", ffmpegPath},
-            {"ConvertedClipOutputDir", outputDirPath},
+            {"ConvertedClipOutputDir", convertedOutputDir},
+            {"ClipsOutputDir", clipsOutputDir},
             {"QueueName", queueName },
             {"BlobContainerName", clipsContainerName},
             {"ConvertedContainerName", convertedClipsContainerName}
@@ -65,11 +68,11 @@ public class ClipConverterRunnerTest
     {
         var fileName = "gs.mp4";
         var filePath = Path.Combine(Environment.CurrentDirectory, "Data/") + fileName;
-        var uploadedClipName = Guid.NewGuid().ToString();
 
         // add file to clip storage
         var blobContainerClient = _blobServiceClient.GetBlobContainerClient(clipsContainerName);
-        BlobClient blobClient = blobContainerClient.GetBlobClient(uploadedClipName);
+        BlobClient blobClient = blobContainerClient.GetBlobClient(fileName);
+        if (blobClient.Exists()) await blobClient.DeleteAsync();
         using (var stream = File.OpenRead(filePath))
         {
             await blobClient.UploadAsync(stream);
@@ -78,7 +81,7 @@ public class ClipConverterRunnerTest
         //add message to queue
         await _queueClient.ClearMessagesAsync();
         var guid2 = Guid.NewGuid().ToString();
-        await _queueClient.SendMessageAsync(uploadedClipName);
+        await _queueClient.SendMessageAsync(fileName);
         await _queueClient.SendMessageAsync(guid2);
 
 
@@ -89,12 +92,12 @@ public class ClipConverterRunnerTest
 
         // test if item gets removed form queue
         Assert.That(messages.Value.Length, Is.EqualTo(1));
-        var message = messages.Value.FirstOrDefault(m => m.MessageId == uploadedClipName);
+        var message = messages.Value.FirstOrDefault(m => m.MessageId == fileName);
         Assert.IsNull(message);
 
         // test if converted file is inserted in converted container
         var convertedContainerClient = _blobServiceClient.GetBlobContainerClient(convertedClipsContainerName);
-        BlobClient newBlobClient = convertedContainerClient.GetBlobClient(uploadedClipName);
+        BlobClient newBlobClient = convertedContainerClient.GetBlobClient(Path.ChangeExtension(fileName, ".gif"));
         Assert.True(await newBlobClient.ExistsAsync());
 
     }

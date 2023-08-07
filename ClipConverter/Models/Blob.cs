@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 namespace ClipConverter.Models;
 public class Blob
 {
-    public string? ContentType;
     public string? Name;
     public Stream? Content;
 }

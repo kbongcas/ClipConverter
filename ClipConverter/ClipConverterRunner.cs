@@ -1,13 +1,16 @@
 ﻿using ClipConverter.Models;
 using ClipConverter.Services;
 using FFmpeg.NET;
+using Microsoft.Extensions.Configuration;
+
 namespace ClipConverter;
 
 public class ClipConverterRunner
 {
-    public QueueService _queueService;
-    public StorageService _storageService;
-    public ClipConverterService _clipConverterService;
+    private QueueService _queueService;
+    private StorageService _storageService;
+    private ClipConverterService _clipConverterService;
+
 
     public ClipConverterRunner(
         QueueService queueService,
@@ -22,25 +25,31 @@ public class ClipConverterRunner
 
     public async Task Run()
     {
+        Console.WriteLine($"Retrieivng Message form queue.");
         var message = await _queueService.PeekMessageAsync();
+        Console.WriteLine($"Message Found: {message.Message}");
         if (String.IsNullOrEmpty(message.Id)) return;
 
-        var blob = await _storageService.GetFileAsync(message.Message);
-        if (blob == null) return;
+        Console.WriteLine($"Downlaoding File From Storage.");
+        var clip = await _storageService.DownloadAsync(message.Message);
+        if (clip == null) return;
+        Console.WriteLine($"File Found and Downloaded: {clip}");
 
-        MediaFile convertedFile;
-        using(blob.Content)
-        {
-            convertedFile = await _clipConverterService.ConvertClipToGif(blob);
-            if (convertedFile == null) return;
-        }
+        Console.WriteLine($"Converting file to gif.");
+        var convertedFile = await _clipConverterService.ConvertClipToGif(clip);
+        if (convertedFile == null) return;
+        Console.WriteLine($"File Converted: {convertedFile}");
 
-        using (var stream = System.IO.File.OpenRead(convertedFile.FileInfo.FullName))
+        using (var stream = System.IO.File.OpenRead(convertedFile))
         {
-            ConvertedClip convertedClip = new ConvertedClip { Id = message.Message, Data = stream };
+            Console.WriteLine($"Uploading File to storage.");
+            ConvertedClip convertedClip = new ConvertedClip { Id = Path.GetFileName(convertedFile), Data = stream };
             await _storageService.UploadAsync(convertedClip);
+            Console.WriteLine($"File uploaded: {convertedFile}");
         }
 
+        Console.WriteLine($"Removing Message from queue");
         await _queueService.RemoveMessageAsync(message);
+        Console.WriteLine($"Message Removed: {message}");
     }
 }

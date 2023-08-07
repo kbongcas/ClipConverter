@@ -12,6 +12,7 @@ public class StorageServiceTests
     private BlobServiceClient _blobServiceClient;
     private readonly string _clipsContainerName = "clips";
     private readonly string _convertedClipsContainerName = "convertedclips";
+    private string _clipsOutputDir = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/clips";
 
 
     [SetUp]
@@ -24,7 +25,8 @@ public class StorageServiceTests
 
         var inMemConfig = new Dictionary<string, string> {
             {"BlobContainerName", _clipsContainerName},
-            {"ConvertedContainerName", _convertedClipsContainerName}
+            {"ConvertedContainerName", _convertedClipsContainerName},
+            { "ClipsOutputDir" , _clipsOutputDir }
         };
 
         IConfiguration config = new ConfigurationBuilder()
@@ -35,27 +37,25 @@ public class StorageServiceTests
     }
 
     [Test]
-    public async Task GetFileTest()
+    public async Task DownloadTest()
     {
         var fileName = "gs.mp4";
-        var filePath = Path.Combine(Environment.CurrentDirectory, "Data/") + fileName;
-        var newFileName = Guid.NewGuid().ToString();
-
+        var filePath = Path.Combine(Environment.CurrentDirectory + "/Data", fileName);
+        var resultFilePath = Path.Combine(_clipsOutputDir, fileName);
+        if(File.Exists(resultFilePath)) File.Delete(resultFilePath);
 
         BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_clipsContainerName);
-        BlobClient blobClient = containerClient.GetBlobClient(newFileName);
+        BlobClient blobClient = containerClient.GetBlobClient(fileName);
 
         if (blobClient.Exists()) await blobClient.DeleteAsync();
         using (var stream = System.IO.File.OpenRead(filePath))
         {
-            var response = await blobClient.UploadAsync(stream);
+            await blobClient.UploadAsync(stream);
         }
 
-        await _storageService.GetFileAsync(newFileName);
+        await _storageService.DownloadAsync(fileName);
 
-
-        BlobClient newBlobClient = containerClient.GetBlobClient(newFileName);
-        Assert.True(await newBlobClient.ExistsAsync());
+        Assert.True(File.Exists(resultFilePath));
 
     }
 

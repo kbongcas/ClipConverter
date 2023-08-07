@@ -11,12 +11,14 @@ public class StorageService : IStorageService
     private BlobServiceClient _blobServiceClient;
     private BlobContainerClient _blobContainerClient;
     private BlobContainerClient _convertedContainerClient;
+    private IConfiguration _config;
 
     public StorageService(
         IConfiguration config,
         BlobServiceClient blobServiceClient
         )
     {
+        _config = config;
         _blobServiceClient = blobServiceClient;
         _blobContainerClient = _blobServiceClient.GetBlobContainerClient(
             config.GetValue<string>("BlobContainerName"));
@@ -34,17 +36,28 @@ public class StorageService : IStorageService
         if (await blobClient.ExistsAsync())
         {
             var data = await blobClient.OpenReadAsync();
-
-            var content = await blobClient.DownloadContentAsync();
-
             blob.Content = data;
             blob.Name = fileName;
-            blob.ContentType = content.Value.Details.ContentType;
             return blob;
         }
 
         return blob;
     }
+
+    public async Task<string> DownloadAsync(string fileName)
+    {
+        // @TODO - implement error handleing
+        // - handle error is file cannot be found in container
+        var clipOutputPath = Path.Combine(_config.GetValue<string>("ClipsOutputDir"), fileName);
+        Blob blob = new Blob();
+        BlobClient blobClient = _blobContainerClient.GetBlobClient(fileName);
+        if (await blobClient.ExistsAsync())
+        {
+            await blobClient.DownloadToAsync(clipOutputPath);
+        }
+        return clipOutputPath; ;
+    }
+
 
     public async Task UploadAsync(ConvertedClip convertedClip)
     {

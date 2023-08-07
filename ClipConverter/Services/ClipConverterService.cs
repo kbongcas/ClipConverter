@@ -1,6 +1,7 @@
 ﻿using ClipConverter.Models;
-using FFmpeg.NET;
 using Microsoft.Extensions.Configuration;
+using System.ComponentModel;
+using System.Diagnostics;
 
 namespace ClipConverter.Services;
 public class ClipConverterService : IClipConverterService
@@ -12,23 +13,23 @@ public class ClipConverterService : IClipConverterService
         _config = config;
     }
 
-    public async Task<MediaFile> ConvertClipToGif(Blob blob)
+    public async Task<string> ConvertClipToGif(string clipName)
     {
-        var ffmpegPath = _config.GetValue<string>("FfmpegExecPath");
-        var ffmpeg = new Engine(ffmpegPath);
+        var nextExt = Path.ChangeExtension(clipName, ".gif");
+        nextExt = Path.GetFileName(nextExt);
+        var convertedClipFileName = Path.Combine(_config.GetValue<string>("ConvertedOutputDir"), nextExt);
 
-        StreamInput streamInput = new StreamInput(blob.Content);
-        var outputFilePath = _config.GetValue<string>("ConvertedClipOutputDir") + blob.Name + ".gif";
-        OutputFile fileOutput = new OutputFile(outputFilePath);
+        var conversionParams = "-vf \"fps=20,scale=600:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=64:reserve_transparent=0[p];[s1][p]paletteuse\"";
 
-        ConversionOptions conversionOptions = new ConversionOptions
+
+        using(Process comp = new Process())
         {
-            VideoFps = 30
-        };
-        var token = new CancellationToken();
-
-        var file = await ffmpeg.ConvertAsync(streamInput, fileOutput, conversionOptions, token);
-
-        return file;
+            comp.StartInfo.FileName = "ffmpeg";
+            comp.StartInfo.Arguments = $"-i {clipName} {conversionParams} -y {convertedClipFileName}";
+            comp.StartInfo.UseShellExecute = false;
+            comp.Start();
+            await comp.WaitForExitAsync();
+        }
+        return convertedClipFileName;
     }
 }

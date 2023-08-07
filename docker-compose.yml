@@ -5,11 +5,13 @@ services:
     image: ${DOCKER_REGISTRY-}clipconverter
     environment:
         DOTNET_ENVIRONMENT: Development
+        AzureStorageConnectionString: AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://host.docker.internal:10000/devstoreaccount1;QueueEndpoint=http://host.docker.internal:10001/devstoreaccount1;TableEndpoint=http://host.docker.internal:10002/devstoreaccount1;
     build:
       context: .
       dockerfile: ClipConverter/Dockerfile
     volumes:
-        - //c/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data:/data/converted
+        - //c/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/converted:/data/converted
+        - //c/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/clips:/data/clips
   ##azurite:
   ##  image: "mcr.microsoft.com/azure-storage/azurite"
   ##  container_name: azurite

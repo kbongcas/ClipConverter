@@ -1,9 +1,6 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
-using ClipConverter.Models;
 using ClipConverter.Services;
-using FFmpeg.NET;
-using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,6 +12,7 @@ internal class Program
 {
     static async Task Main(string[] args)
     {
+        Console.WriteLine("App has started.");
         var builder = new ConfigurationBuilder();
         BuildConfig(builder);
 
@@ -28,7 +26,7 @@ internal class Program
             .ConfigureServices((context, services) =>
             {
                 var queueOpts = new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 };
-                var azureStorageConnection = Environment.GetEnvironmentVariable("AzureStorageConnection");
+                var azureStorageConnection = Environment.GetEnvironmentVariable("AzureStorageConnectionString");
                 services.AddSingleton<QueueServiceClient>(x =>
                     new QueueServiceClient(azureStorageConnection, queueOpts));
 
@@ -53,6 +51,8 @@ internal class Program
             clipConverterService
             );
         await clipConverterRunner.Run();
+
+        Console.WriteLine("App is exiting.");
     }
 
     static void BuildConfig(IConfigurationBuilder configurationBuilder)

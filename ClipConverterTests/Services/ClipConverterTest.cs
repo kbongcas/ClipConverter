@@ -10,14 +10,16 @@ public class ClipConverterTest
 {
     private ClipConverterService _clipConverterService;
     private readonly string ffmpegPath = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe";
-    private readonly string outputDirPath = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/";
+    private readonly string _clipOutputDirPath = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/clips/";
+    private readonly string _convertedOutputDir = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/converted/";
 
     [SetUp]
     public void SetUp()
     {
         var inMemConfig = new Dictionary<string, string> {
             {"FfmpegExecPath", ffmpegPath},
-            {"ConvertedClipOutputDir", outputDirPath}
+            {"ClipOutputDir", _clipOutputDirPath},
+            {"ConvertedOutputDir", _convertedOutputDir}
         };
 
         IConfiguration config = new ConfigurationBuilder()
@@ -31,17 +33,15 @@ public class ClipConverterTest
     public async Task ConvertMp4ToGif()
     {
 
-        var fileName = "gs.mp4";
-        var filePath = Path.Combine(Environment.CurrentDirectory, "Data/") + fileName;
-        var blobName = Guid.NewGuid().ToString();
-        MediaFile mediaFile = null;
-        using (var stream = System.IO.File.OpenRead(filePath))
-        {
-            Blob blob = new Blob() { Name = blobName, Content = stream };
-            mediaFile = await _clipConverterService.ConvertClipToGif(blob);
-        }
+        var fileName = "gss.mp4";
+        var clipPath = Path.Combine(_clipOutputDirPath, fileName);
+        var convertedClipPath = Path.ChangeExtension(Path.Combine(_convertedOutputDir, fileName), ".gif");
+        if(!File.Exists(clipPath)) return;
+        if(File.Exists(convertedClipPath)) File.Delete(convertedClipPath);
 
-        Assert.NotNull(mediaFile);
+        await _clipConverterService.ConvertClipToGif(clipPath);
+
+        Assert.True(File.Exists(convertedClipPath));
 
     }
 
