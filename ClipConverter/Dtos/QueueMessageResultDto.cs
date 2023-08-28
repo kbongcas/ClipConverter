@@ -1,5 +1,5 @@
-﻿namespace ClipConverter.Models;
-public class QueueMessageData
+﻿namespace ClipConverter.Dtos;
+public class QueueMessageResultDto
 {
     public string? Id;
     public string? PopReceipt;

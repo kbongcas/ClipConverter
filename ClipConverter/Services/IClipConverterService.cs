@@ -3,5 +3,5 @@
 namespace ClipConverter.Services;
 public interface IClipConverterService
 {
-    Task<string> ConvertClipToGif(string fileName);
+    Task<Errors.ServiceResult<string>> ConvertClipToGif(string fileName);
 }

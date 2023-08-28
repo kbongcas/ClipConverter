@@ -1,6 +1,8 @@
-﻿using Azure.Storage.Queues;
+﻿using Azure;
+using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
-using ClipConverter.Models;
+using ClipConverter.Dtos;
+using ClipConverter.Errors;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Reflection.Metadata.Ecma335;
@@ -21,24 +23,43 @@ public class QueueService : IQueueService
         _queueClient = _queueServiceClient.GetQueueClient(config.GetValue<string>("QueueName"));
     }
 
-    public async Task<QueueMessageData> PeekMessageAsync()
+    public async Task<ServiceResult<QueueMessageResultDto>> PeekMessageAsync()
     {
-        // @TODO - Implement Error Handling
-        QueueMessageData blobUri = new QueueMessageData();
-        var response = await _queueClient.ReceiveMessageAsync();
-        if ( response.Value != null ) {
+        ServiceResult<QueueMessageResultDto> serviceResult = new();
+        try
+        {
+            // @TODO - Implement Error Handling
+            QueueMessageResultDto queueMessageResultDto = new QueueMessageResultDto();
+            var response = await _queueClient.ReceiveMessageAsync();
+            if (response.Value == null) throw new Exception("There was a problem reading the queue.");
+
             var message = response.Value.Body.ToString();
-            blobUri.Id = response.Value.MessageId;
-            blobUri.PopReceipt = response.Value.PopReceipt;
-            blobUri.Message = message;
-            return blobUri;
+            queueMessageResultDto.Id = response.Value.MessageId;
+            queueMessageResultDto.PopReceipt = response.Value.PopReceipt;
+            queueMessageResultDto.Message = message;
+
+            serviceResult.Result = queueMessageResultDto;
         }
-        return blobUri;
+        catch (Exception ex)
+        {
+            serviceResult.IsError = true;
+            serviceResult.ErrorMessage = ex.ToString();
+        }
+        return serviceResult;
     }
 
-    public async Task RemoveMessageAsync(QueueMessageData queueMessageData)
+    public async Task<ServiceResult<Response>> RemoveMessageAsync(QueueMessageResultDto queueMessageData)
     {
-        // @TODO - Implement Error Handling
-        await _queueClient.DeleteMessageAsync(queueMessageData.Id, queueMessageData.PopReceipt);
+        ServiceResult<Response> serviceResult = new();
+        try
+        {
+            serviceResult.Result = await _queueClient.DeleteMessageAsync(queueMessageData.Id, queueMessageData.PopReceipt);
+        }
+        catch(Exception ex) 
+        {
+            serviceResult.IsError = true;
+            serviceResult.ErrorMessage = ex.ToString();
+        }
+        return serviceResult;
     }
 }

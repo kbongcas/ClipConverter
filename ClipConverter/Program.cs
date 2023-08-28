@@ -1,6 +1,7 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
 using ClipConverter.Services;
+using ClipConverter.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -38,6 +39,8 @@ internal class Program
                 services.AddSingleton<IClipConverterService, ClipConverterService>();
 
                 services.AddSingleton<IStorageService, StorageService>();
+
+                services.AddSingleton<IClipService, ClipService>();
             })
             .UseSerilog()
             .Build();
@@ -45,10 +48,12 @@ internal class Program
         var queueService = ActivatorUtilities.CreateInstance<QueueService>(host.Services);
         var storageService = ActivatorUtilities.CreateInstance<StorageService>(host.Services);
         var clipConverterService = ActivatorUtilities.CreateInstance<ClipConverterService>(host.Services);
+        var clipService = ActivatorUtilities.CreateInstance<ClipService>(host.Services);
         var clipConverterRunner = new ClipConverterRunner(
             queueService,
             storageService,
-            clipConverterService
+            clipConverterService,
+            clipService
             );
         await clipConverterRunner.Run();
 

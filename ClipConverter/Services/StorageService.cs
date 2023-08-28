@@ -1,5 +1,6 @@
 ﻿using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using ClipConverter.Errors;
 using ClipConverter.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -27,41 +28,31 @@ public class StorageService : IStorageService
             config.GetValue<string>("ConvertedContainerName"));
     }
 
-    public async Task<Blob> GetFileAsync(string fileName)
+    public async Task<ServiceResult<string>> DownloadAsync(string fileName)
     {
-        // @TODO - implement error handleing
-        // - handle error is file cannot be found in container
-        Blob blob = new Blob();
-        BlobClient blobClient = _blobContainerClient.GetBlobClient(fileName);
-        if (await blobClient.ExistsAsync())
+        ServiceResult<string> serviceResult = new();
+        try
         {
-            var data = await blobClient.OpenReadAsync();
-            blob.Content = data;
-            blob.Name = fileName;
-            return blob;
+            var clipOutputPath = Path.Combine(_config.GetValue<string>("ClipsOutputDir"), fileName);
+            BlobClient blobClient = _blobContainerClient.GetBlobClient(fileName);
+            if (await blobClient.ExistsAsync())
+            {
+                await blobClient.DownloadToAsync(clipOutputPath);
+            }
+            serviceResult.Result = clipOutputPath;
         }
-
-        return blob;
-    }
-
-    public async Task<string> DownloadAsync(string fileName)
-    {
-        // @TODO - implement error handleing
-        // - handle error is file cannot be found in container
-        var clipOutputPath = Path.Combine(_config.GetValue<string>("ClipsOutputDir"), fileName);
-        Blob blob = new Blob();
-        BlobClient blobClient = _blobContainerClient.GetBlobClient(fileName);
-        if (await blobClient.ExistsAsync())
+        catch (Exception ex)
         {
-            await blobClient.DownloadToAsync(clipOutputPath);
+            serviceResult.IsError = true;
+            serviceResult.ErrorMessage = ex.ToString();
         }
-        return clipOutputPath; ;
+        return serviceResult; ;
     }
 
 
-    public async Task UploadAsync(ConvertedClip convertedClip)
+    public async Task<ServiceResult<string>> UploadAsync(ConvertedClip convertedClip)
     {
-        // @TODO - implement error handleing
+        ServiceResult<string> serviceResult = new();
         try
         {
             BlobClient blobClient = _convertedContainerClient.GetBlobClient(convertedClip.Id);
@@ -73,10 +64,14 @@ public class StorageService : IStorageService
 
             if (response.GetRawResponse().IsError)
                 throw new Exception(response.GetRawResponse().ReasonPhrase);
+
+            serviceResult.Result = blobClient.Uri.AbsoluteUri;
         }
         catch (Exception ex)
         {
-            //@TODO - Log Error Message
+            serviceResult.IsError = true;
+            serviceResult.ErrorMessage = ex.ToString();
         }
+        return serviceResult;
     }
 }

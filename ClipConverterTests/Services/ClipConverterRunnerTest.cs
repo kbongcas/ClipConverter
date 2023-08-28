@@ -17,6 +17,7 @@ public class ClipConverterRunnerTest
     private ClipConverterService _clipConverterService;
     private QueueClient _queueClient;
     private ClipConverterRunner _clipConverterRunner;
+    private ClipService _clipService;
     public string ffmpegPath = "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe";
     public string outputDirPath = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/";
     public string clipsOutputDir = "C:/Users/kbong/projects/dotnet/ClipConverter/ClipConverterTests/Data/clips/";
@@ -54,12 +55,15 @@ public class ClipConverterRunnerTest
         _queueClient = _queueServiceClient.GetQueueClient("clips");
         _queueService = new QueueService(config, _queueServiceClient);
 
+        _clipService = new ClipService(config);
+
         _clipConverterService = new ClipConverterService(config);
 
         _clipConverterRunner = new ClipConverterRunner(
             _queueService,
             _storageService,
-            _clipConverterService
+            _clipConverterService,
+            _clipService
             );
     }
 

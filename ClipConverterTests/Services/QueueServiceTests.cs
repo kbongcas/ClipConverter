@@ -1,6 +1,6 @@
 ﻿using Azure.Storage.Queues;
 using Azure.Storage.Queues.Models;
-using ClipConverter.Models;
+using ClipConverter.Dtos;
 using ClipConverter.Services;
 using Microsoft.Extensions.Configuration;
 
@@ -43,7 +43,7 @@ public class QueueServiceTests
         var queueMessageData = await _queueService.PeekMessageAsync();
 
         Assert.IsNotNull(queueMessageData);
-        Assert.That(queueMessageData.Message, Is.EqualTo(guid));
+        Assert.That(queueMessageData.Result.Message, Is.EqualTo(guid));
 
         // multiple messages
         await _queueClient.ClearMessagesAsync();
@@ -57,7 +57,7 @@ public class QueueServiceTests
         var queueMessageData1 = await _queueService.PeekMessageAsync();
 
         Assert.IsNotNull(queueMessageData);
-        Assert.That(queueMessageData1.Message, Is.EqualTo(guid1));
+        Assert.That(queueMessageData1.Result.Message, Is.EqualTo(guid1));
     }
 
     [Test]
@@ -68,7 +68,7 @@ public class QueueServiceTests
         var guid2 = Guid.NewGuid().ToString();
         await _queueClient.SendMessageAsync(guid1);
         var sendReceipt = await _queueClient.SendMessageAsync(guid2);
-        QueueMessageData queueMessageData = new QueueMessageData()
+        QueueMessageResultDto queueMessageData = new QueueMessageResultDto()
         {
             Id = sendReceipt.Value.MessageId,
             PopReceipt = sendReceipt.Value.PopReceipt,
