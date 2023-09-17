@@ -1,4 +1,4 @@
-name: Clip Converter Build and Deploy on Dev
+name: Clip Converter Build and Deploy for Master Branch
 
 on:
   push:
