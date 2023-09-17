@@ -57,14 +57,15 @@ public class ClipService : IClipService
             {
                 uri = editClipUriRequestDto.Uri,
                 converted = editClipUriRequestDto.Converted
-            }); ;
+            });
             var clipsResponse = await clipsClient.ExecuteAsync(clipsRequest);
 
             if (clipsResponse.StatusCode != System.Net.HttpStatusCode.OK)
                 // @TODO - better execption handling here errormessage is null
                 throw new Exception(clipsResponse.ErrorMessage.ToString());
 
-            var editClipUriResponseDto = JsonConvert.DeserializeObject<EditClipUriResponseDto>(clipsResponse.Content!);
+            Console.WriteLine(clipsResponse.Content);
+            var editClipUriResponseDto = JsonConvert.DeserializeObject<EditClipUriResponseDto>(clipsResponse.Content);
 
             if (editClipUriResponseDto?.Id == null)
                 throw new Exception("There was a problem Adding a clip, reponse did not provide an Id.");

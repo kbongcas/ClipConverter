@@ -1,0 +1,23 @@
+name: Clip Uploader Build and Deploy for Dev
+
+on:
+  push:
+    branches: ['dev']
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to docker hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+        
+      - name: Build the Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/clipdat-clipconverter:dev . --file ClipUploader/Dockerfile
+      
+      - name: Docker Push
+        run: docker push "${{ secrets.DOCKER_USERNAME }}/clipdat-clipconverter:dev"

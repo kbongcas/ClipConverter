@@ -7,4 +7,5 @@ public interface IStorageService
 {
     public Task<ServiceResult<string>> DownloadAsync(string fileName);
     public Task<ServiceResult<string>> UploadAsync(ConvertedClip convertedClip);
+    public Task<ServiceResult<string>> UploadHtmlAsync(string html, string id);
 }

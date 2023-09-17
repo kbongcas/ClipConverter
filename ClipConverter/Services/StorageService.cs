@@ -4,6 +4,7 @@ using ClipConverter.Errors;
 using ClipConverter.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Text;
 
 namespace ClipConverter.Services;
 public class StorageService : IStorageService
@@ -60,6 +61,31 @@ public class StorageService : IStorageService
             await using (convertedClip.Data)
             {
                 response = await blobClient.UploadAsync(convertedClip.Data);
+            }
+
+            if (response.GetRawResponse().IsError)
+                throw new Exception(response.GetRawResponse().ReasonPhrase);
+
+            serviceResult.Result = blobClient.Uri.AbsoluteUri;
+        }
+        catch (Exception ex)
+        {
+            serviceResult.IsError = true;
+            serviceResult.ErrorMessage = ex.ToString();
+        }
+        return serviceResult;
+    }
+
+    public async Task<ServiceResult<string>> UploadHtmlAsync(string html, string id)
+    {
+         ServiceResult<string> serviceResult = new();
+        try
+        {
+            BlobClient blobClient = _convertedContainerClient.GetBlobClient(id + ".html");
+            Azure.Response<BlobContentInfo> response;
+            await using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(html)))
+            {
+                response = await blobClient.UploadAsync(ms, new BlobHttpHeaders { ContentType = "text/html" });
             }
 
             if (response.GetRawResponse().IsError)

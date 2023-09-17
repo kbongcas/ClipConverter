@@ -1,7 +1,9 @@
 ﻿using Azure;
 using Azure.Storage.Blobs;
+using ClipConverter.Dtos;
 using ClipConverter.Models;
 using ClipConverter.Services;
+using ClipConverter.Utils;
 using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 
@@ -87,4 +89,30 @@ public class StorageServiceTests
         Assert.True(await newBlobClient.ExistsAsync());
 
     }
+    [Test]
+    public async Task UploadHtmlTest()
+    {
+
+        var newFileName = Guid.NewGuid().ToString();
+        GenerateHtmlRequestDto generateHtmlRequestDto = new GenerateHtmlRequestDto()
+        {
+            Name = "testname",
+            Description = "testdescript",
+            ConvertedFile = "https://clipdatsa.blob.core.windows.net/converted/0b579e83-0384-4675-b218-2bb9cda4eba5.gif",
+        };
+        var htmlString = ClipHtmlGenerator.GenerateHtml(generateHtmlRequestDto);
+
+
+        BlobContainerClient containerClient = _blobServiceClient.GetBlobContainerClient(_convertedClipsContainerName);
+        BlobClient blobClient = containerClient.GetBlobClient(newFileName+".html");
+
+        if (blobClient.Exists()) await blobClient.DeleteAsync();
+
+        await _storageService.UploadHtmlAsync(htmlString,newFileName);
+
+        BlobClient newBlobClient = containerClient.GetBlobClient(newFileName + ".html");
+        Assert.True(await newBlobClient.ExistsAsync());
+
+    }
+
 }

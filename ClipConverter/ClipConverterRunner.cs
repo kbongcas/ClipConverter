@@ -3,6 +3,7 @@ using ClipConverter.Errors;
 using ClipConverter.Models;
 using ClipConverter.Services;
 using ClipConverter.Services;
+using ClipConverter.Utils;
 using Newtonsoft.Json;
 
 namespace ClipConverter;
@@ -60,6 +61,18 @@ public class ClipConverterRunner
                 uploadServiceResult = await _storageService.UploadAsync(convertedClip);
                 if (uploadServiceResult.IsError) throw new Exception(uploadServiceResult.ErrorMessage);
             }
+
+            ServiceResult<string> uploadHtmlServiceResult = null;
+            Console.WriteLine($"Uploading {convertServiceResult.Result}.html to storage.");
+            GenerateHtmlRequestDto generateHtmlRequestDto = new GenerateHtmlRequestDto()
+            {
+                Name = queueMessage.Name,
+                Description = queueMessage.Description,
+                ConvertedFile = uploadServiceResult.Result,
+            };
+            var htmlString = ClipHtmlGenerator.GenerateHtml(generateHtmlRequestDto);
+            uploadHtmlServiceResult = await _storageService.UploadHtmlAsync(htmlString, queueMessage.ClipId);
+            if (uploadHtmlServiceResult.IsError) throw new Exception(uploadHtmlServiceResult.ErrorMessage);
 
             Console.WriteLine($"Editing conversion status");
             EditClipUriRequestDto editClipUriRequestDto = new EditClipUriRequestDto()
