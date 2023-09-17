@@ -1,4 +1,4 @@
-name: Clip Converter Build and Deploy
+name: Clip Converter Build and Deploy on Dev
 
 on:
   push:
